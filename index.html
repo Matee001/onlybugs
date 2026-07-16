@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fullscreen Image</title>
+    <style>
+        /* Remove default margins and hide scrollbars */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000; /* Fallback black background while loading */
+        }
+
+        /* Container to display the image across the full viewport */
+        .fullscreen-bg {
+            width: 100%;
+            height: 100%;
+            background-image: url('bug1.jpg');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover; /* Forces the image to fill the screen, scaling proportionally */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="fullscreen-bg"></div>
+
+</body>
+</html>
