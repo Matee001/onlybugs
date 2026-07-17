@@ -1,34 +1,43 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OnlyBugs</title>
-    <style>
-        /* Remove default margins and hide scrollbars */
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000; /* Fallback black background while loading */
-        }
-
-        /* Container to display the image across the full viewport */
-        .fullscreen-bg {
-            width: 100%;
-            height: 100%;
-            background-image: url('bug1.jpg');
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover; /* Forces the image to fill the screen, scaling proportionally */
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="favicon.png">
+  <title>onlybugs</title>
+  <style>
+    :root{--gap:5vh}
+    html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    .logo img{width:100vw;max-width:100%;height:auto;display:block}
+    .spacer{height:5vh}
+    .bug{display:flex;flex-direction:column;align-items:center;margin:20px 0;color:#ddd}
+    .bug a img{width:90vw;max-width:700px;border-radius:16px;display:block;height:auto;border:4px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    .desc{margin-top:12px;font-size:1rem;text-align:center;color:#ddd}
+    a{text-decoration:none;color:inherit}
+  </style>
 </head>
 <body>
+  <main class="container">
+    <header class="logo">
+      <img src="logo.jpg" alt="logo">
+    </header>
 
-    <div class="fullscreen-bg"></div>
+    <div class="spacer" aria-hidden="true"></div>
 
+    <section class="bug">
+      <a href="bug1.jpg" target="_blank" rel="noopener noreferrer">
+        <img src="bug1.jpg" alt="bug 1">
+      </a>
+      <div class="desc">desc1</div>
+    </section>
+
+    <section class="bug">
+      <a href="bug2.jpg" target="_blank" rel="noopener noreferrer">
+        <img src="bug2.jpg" alt="bug 2">
+      </a>
+      <div class="desc">desc2</div>
+    </section>
+  </main>
 </body>
 </html>
