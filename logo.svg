@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 56" width="240" height="56">
+  <defs>
+    <linearGradient id="ofBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00aff0" />
+      <stop offset="100%" stop-color="#008ecc" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(4, 4)">
+    <circle cx="24" cy="24" r="24" fill="url(#ofBlueGrad)"/>
+    <!-- Bug / Fan Icon -->
+    <path d="M24 13 C19 13 15 17 15 22 L 15 25 C 13 25 12 26.5 12 28 C 12 29.5 13 31 15 31 L 15 33 C 15 38 19 41 24 41 C 29 41 33 38 33 33 L 33 31 C 35 31 36 29.5 36 28 C 36 26.5 35 25 33 25 L 33 22 C 33 17 29 13 24 13 Z M 20 18 C 21 18 22 19 22 20 C 22 21 21 22 20 22 C 19 22 18 21 18 20 C 18 19 19 18 20 18 Z M 28 18 C 29 18 30 19 30 20 C 30 21 29 22 28 22 C 27 22 26 21 26 20 C 26 19 27 18 28 18 Z M 24 24 L 24 38 M 15 27 L 33 27 M 16 33 L 32 33" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none"/>
+  </g>
+  <text x="62" y="36" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="25" font-weight="800" fill="#1e293b" letter-spacing="-0.5">Only<tspan fill="#00aff0">Bugs</tspan></text>
+</svg>
