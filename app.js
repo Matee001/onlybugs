@@ -728,7 +728,6 @@ function renderFeed() {
           alt="${escapeHTML(post.title)}" 
           class="post-thumbnail-img" 
           loading="lazy"
-          onerror="this.onerror=null; this.src='./img/${post.id}.svg';"
         />
         <div class="blur-overlay-notice">
           <svg class="blur-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -903,10 +902,7 @@ function openLightbox(postId) {
 
   state.activeLightboxId = postId;
   DOM.lightboxImg.src = `./img/${postId}.png`;
-  DOM.lightboxImg.onerror = () => {
-    DOM.lightboxImg.onerror = null;
-    DOM.lightboxImg.src = `./img/${postId}.svg`;
-  };
+  DOM.lightboxImg.onerror = null;
 
   DOM.lightboxPostTitle.textContent = post.title;
   DOM.lightboxAccount.textContent = post.account;
