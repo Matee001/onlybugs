@@ -340,6 +340,8 @@ const DOM = {
   lightboxPostDate: document.getElementById("lightbox-post-date"),
   lightboxLikeBtn: document.getElementById("lightbox-like-btn"),
   lightboxLikeCount: document.getElementById("lightbox-like-count"),
+  lightboxMediaLikeBtn: document.getElementById("lightbox-media-like-btn"),
+  lightboxMediaLikeCount: document.getElementById("lightbox-media-like-count"),
   lightboxCloseBtn: document.getElementById("lightbox-close-btn"),
   lightboxPrevBtn: document.getElementById("lightbox-prev-btn"),
   lightboxNextBtn: document.getElementById("lightbox-next-btn"),
@@ -603,6 +605,11 @@ async function togglePostLike(postId) {
       DOM.lightboxLikeBtn.classList.remove("heart-bump");
       void DOM.lightboxLikeBtn.offsetWidth;
       DOM.lightboxLikeBtn.classList.add("heart-bump");
+    }
+    if (DOM.lightboxMediaLikeBtn) {
+      DOM.lightboxMediaLikeBtn.classList.remove("heart-bump");
+      void DOM.lightboxMediaLikeBtn.offsetWidth;
+      DOM.lightboxMediaLikeBtn.classList.add("heart-bump");
     }
 
     if (state.isFirestoreConnected && state.firestoreDb) {
@@ -903,13 +910,18 @@ function updateLightboxLikeState() {
     ? state.likes[postId] 
     : (INITIAL_SEED_LIKES[postId] || 0);
 
-  DOM.lightboxLikeCount.textContent = formatNumber(count);
+  const formattedCount = formatNumber(count);
+  if (DOM.lightboxLikeCount) DOM.lightboxLikeCount.textContent = formattedCount;
+  if (DOM.lightboxMediaLikeCount) DOM.lightboxMediaLikeCount.textContent = formattedCount;
+
   const userLiked = isPostLiked(postId);
 
   if (userLiked) {
-    DOM.lightboxLikeBtn.classList.add("liked");
+    if (DOM.lightboxLikeBtn) DOM.lightboxLikeBtn.classList.add("liked");
+    if (DOM.lightboxMediaLikeBtn) DOM.lightboxMediaLikeBtn.classList.add("liked");
   } else {
-    DOM.lightboxLikeBtn.classList.remove("liked");
+    if (DOM.lightboxLikeBtn) DOM.lightboxLikeBtn.classList.remove("liked");
+    if (DOM.lightboxMediaLikeBtn) DOM.lightboxMediaLikeBtn.classList.remove("liked");
   }
 }
 
@@ -1047,6 +1059,22 @@ function setupEventListeners() {
     if (!state.activeLightboxId) return;
     togglePostLike(state.activeLightboxId);
   });
+
+  if (DOM.lightboxMediaLikeBtn) {
+    DOM.lightboxMediaLikeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!state.activeLightboxId) return;
+      togglePostLike(state.activeLightboxId);
+    });
+  }
+
+  if (DOM.lightboxImg) {
+    DOM.lightboxImg.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      if (!state.activeLightboxId) return;
+      togglePostLike(state.activeLightboxId);
+    });
+  }
 
   DOM.lightboxAccount.addEventListener("click", (e) => {
     e.preventDefault();

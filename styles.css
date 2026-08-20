@@ -964,6 +964,56 @@ img {
   right: 1rem;
 }
 
+.lightbox-media-like-badge {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: all var(--transition-fast);
+}
+
+.lightbox-media-like-badge svg {
+  fill: none;
+  stroke: currentColor;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.lightbox-media-like-badge:hover {
+  background: rgba(236, 72, 153, 0.4);
+  border-color: #f472b6;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.lightbox-media-like-badge.liked {
+  background: rgba(236, 72, 153, 0.9);
+  border-color: #ec4899;
+  color: #ffffff;
+}
+
+.lightbox-media-like-badge.liked svg {
+  fill: #ffffff;
+  stroke: #ffffff;
+  animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.lightbox-media-like-badge.heart-bump svg {
+  animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 .lightbox-details-panel {
   flex: 1;
   max-width: 380px;
