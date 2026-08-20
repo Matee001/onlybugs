@@ -25,7 +25,6 @@ import {
   onSnapshot, 
   setDoc, 
   updateDoc, 
-  deleteDoc, 
   increment, 
   getDocFromServer 
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -101,8 +100,6 @@ const INITIAL_SEED_CREATORS = {
   }
 };
 
-const OBSOLETE_POST_IDS = ["0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012"];
-
 function normalizeCreatorId(handleOrUsername) {
   if (!handleOrUsername) return "";
   return handleOrUsername.replace(/^@/, "").trim().toLowerCase();
@@ -157,6 +154,7 @@ const TRANSLATIONS = {
     postedRecently: "Posted recently • Public Feed",
     copied: "Copied!",
     copyLink: "Copy Link",
+    loadingPosts: "Loading posts...",
     noPostsFound: "No Posts Found",
     noMediaByAccount: "No media published by {account} yet.",
     noPostsInDb: "Database contains no registered posts.",
@@ -187,6 +185,7 @@ const TRANSLATIONS = {
     postedRecently: "Közzétéve nemrég • Nyilvános hírfolyam",
     copied: "Másolva!",
     copyLink: "Hivatkozás másolása",
+    loadingPosts: "Bejegyzések betöltése...",
     noPostsFound: "Nincsenek bejegyzések",
     noMediaByAccount: "{account} még nem tett közzé tartalmat.",
     noPostsInDb: "Az adatbázis nem tartalmaz regisztrált bejegyzéseket.",
@@ -275,9 +274,10 @@ const state = {
   isLoggedIn: getCookie("logged_in") === "true",
   userLikedPostIds: getLikedPostIdsFromCookie(),
   currentFilterAccount: null,
-  posts: { ...INITIAL_SEED_POSTS },
-  likes: { ...INITIAL_SEED_LIKES },
-  creators: { ...INITIAL_SEED_CREATORS },
+  posts: {},
+  likes: {},
+  creators: {},
+  isPostsLoaded: false,
   activeLightboxId: null,
   firestoreDb: null,
   isFirestoreConnected: false
@@ -417,39 +417,20 @@ function initRealtimeDatabase() {
 
     testConnection(db);
 
-    // 1. Purge obsolete posts 0003-0012 from Firestore
-    cleanupObsoleteEntries(db);
-
-    // 2. Realtime listener for Posts collection (/posts/{postId})
+    // 1. Realtime listener for Posts collection (/posts/{postId})
     const postsCollectionRef = collection(db, "posts");
     onSnapshot(postsCollectionRef, (snapshot) => {
       if (!snapshot.empty) {
         const fetchedPosts = {};
         snapshot.forEach((docSnap) => {
-          const id = docSnap.id;
-          if (id === "0001" || id === "0002") {
-            fetchedPosts[id] = docSnap.data();
-          } else {
-            deleteDoc(doc(db, "posts", id)).catch(() => {});
-          }
+          fetchedPosts[docSnap.id] = docSnap.data();
         });
-
-        if (!fetchedPosts["0001"]) {
-          fetchedPosts["0001"] = INITIAL_SEED_POSTS["0001"];
-          setDoc(doc(db, "posts", "0001"), INITIAL_SEED_POSTS["0001"]).catch(err => {
-            handleFirestoreError(err, OperationType.WRITE, "posts/0001");
-          });
-        }
-        if (!fetchedPosts["0002"]) {
-          fetchedPosts["0002"] = INITIAL_SEED_POSTS["0002"];
-          setDoc(doc(db, "posts", "0002"), INITIAL_SEED_POSTS["0002"]).catch(err => {
-            handleFirestoreError(err, OperationType.WRITE, "posts/0002");
-          });
-        }
 
         state.posts = fetchedPosts;
         state.isFirestoreConnected = true;
+        state.isPostsLoaded = true;
         renderFeed();
+        updateLightboxIfOpen();
       } else {
         seedPostsCollection(db);
       }
@@ -464,25 +445,9 @@ function initRealtimeDatabase() {
       if (!snapshot.empty) {
         const fetchedLikes = {};
         snapshot.forEach((docSnap) => {
-          const id = docSnap.id;
-          if (id === "0001" || id === "0002") {
-            const data = docSnap.data();
-            fetchedLikes[id] = typeof data.count === "number" ? data.count : (INITIAL_SEED_LIKES[id] || 0);
-          }
+          const data = docSnap.data();
+          fetchedLikes[docSnap.id] = typeof data.count === "number" ? data.count : 0;
         });
-
-        if (fetchedLikes["0001"] === undefined) {
-          fetchedLikes["0001"] = INITIAL_SEED_LIKES["0001"];
-          setDoc(doc(db, "likes", "0001"), { count: INITIAL_SEED_LIKES["0001"] }).catch(err => {
-            handleFirestoreError(err, OperationType.WRITE, "likes/0001");
-          });
-        }
-        if (fetchedLikes["0002"] === undefined) {
-          fetchedLikes["0002"] = INITIAL_SEED_LIKES["0002"];
-          setDoc(doc(db, "likes", "0002"), { count: INITIAL_SEED_LIKES["0002"] }).catch(err => {
-            handleFirestoreError(err, OperationType.WRITE, "likes/0002");
-          });
-        }
 
         state.likes = { ...state.likes, ...fetchedLikes };
         syncLocalLikes();
@@ -505,16 +470,6 @@ function initRealtimeDatabase() {
           fetchedCreators[username] = docSnap.data();
         });
 
-        // Ensure default creators exist in database
-        for (const [uname, defaultData] of Object.entries(INITIAL_SEED_CREATORS)) {
-          if (!fetchedCreators[uname]) {
-            fetchedCreators[uname] = defaultData;
-            setDoc(doc(db, "creators", uname), defaultData).catch(err => {
-              handleFirestoreError(err, OperationType.WRITE, `creators/${uname}`);
-            });
-          }
-        }
-
         state.creators = { ...state.creators, ...fetchedCreators };
         if (state.currentFilterAccount) {
           updateProfileBanner(state.currentFilterAccount);
@@ -532,22 +487,18 @@ function initRealtimeDatabase() {
   }
 }
 
-async function cleanupObsoleteEntries(db) {
-  for (const obsId of OBSOLETE_POST_IDS) {
-    deleteDoc(doc(db, "posts", obsId)).catch(() => {});
-    deleteDoc(doc(db, "likes", obsId)).catch(() => {});
-  }
-}
-
 async function seedPostsCollection(db) {
   try {
     for (const [id, postData] of Object.entries(INITIAL_SEED_POSTS)) {
       await setDoc(doc(db, "posts", id), postData);
     }
     state.posts = { ...INITIAL_SEED_POSTS };
+    state.isPostsLoaded = true;
     renderFeed();
   } catch (err) {
     handleFirestoreError(err, OperationType.CREATE, "posts");
+    state.isPostsLoaded = true;
+    renderFeed();
   }
 }
 
@@ -589,6 +540,7 @@ function useLocalDatabaseFallback() {
   }
   state.posts = { ...INITIAL_SEED_POSTS };
   state.creators = { ...INITIAL_SEED_CREATORS };
+  state.isPostsLoaded = true;
   renderFeed();
   updateLightboxIfOpen();
 }
@@ -676,13 +628,13 @@ async function togglePostLike(postId) {
 // =========================================================================
 
 function getVisiblePostList() {
-  const postIds = Object.keys(state.posts).filter(id => id === "0001" || id === "0002").sort();
+  const postIds = Object.keys(state.posts).sort();
   const validPosts = [];
 
   for (const id of postIds) {
     const post = state.posts[id];
     if (post && typeof post.title === "string" && typeof post.account === "string") {
-      if (!state.currentFilterAccount || post.account === state.currentFilterAccount) {
+      if (!state.currentFilterAccount || normalizeCreatorId(post.account) === normalizeCreatorId(state.currentFilterAccount)) {
         validPosts.push({ id, ...post });
       }
     }
@@ -692,8 +644,20 @@ function getVisiblePostList() {
 }
 
 function renderFeed() {
-  const visiblePosts = getVisiblePostList();
   DOM.mediaGrid.innerHTML = "";
+
+  if (!state.isPostsLoaded) {
+    const loadingDiv = document.createElement("div");
+    loadingDiv.className = "loading-feed-placeholder";
+    loadingDiv.innerHTML = `
+      <div class="loading-spinner"></div>
+      <p class="loading-text">${t("loadingPosts")}</p>
+    `;
+    DOM.mediaGrid.appendChild(loadingDiv);
+    return;
+  }
+
+  const visiblePosts = getVisiblePostList();
 
   if (visiblePosts.length === 0) {
     const emptyDiv = document.createElement("div");
@@ -724,10 +688,11 @@ function renderFeed() {
     card.innerHTML = `
       <div class="post-thumbnail-wrapper">
         <img 
-          src="./img/${post.id}.png" 
+          src="${post.image || `./img/${post.id}.png`}" 
           alt="${escapeHTML(post.title)}" 
           class="post-thumbnail-img" 
           loading="lazy"
+          onerror="this.onerror=null; this.src='./img/0001.png';"
         />
         <div class="blur-overlay-notice">
           <svg class="blur-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -802,7 +767,7 @@ function updateProfileBanner(accountHandle) {
   DOM.profileBannerHandle.textContent = accountHandle.startsWith("@") ? accountHandle : `@${accountHandle}`;
   DOM.profileBannerBio.textContent = bioText;
 
-  const creatorPosts = Object.entries(state.posts).filter(([id, p]) => p && p.account === accountHandle && (id === "0001" || id === "0002"));
+  const creatorPosts = Object.entries(state.posts).filter(([id, p]) => p && normalizeCreatorId(p.account) === cleanUsername);
   const totalLikes = creatorPosts.reduce((sum, [id]) => sum + (typeof state.likes[id] === "number" ? state.likes[id] : 0), 0);
 
   DOM.profileStatPosts.textContent = creatorPosts.length;
@@ -901,8 +866,11 @@ function openLightbox(postId) {
   if (!post) return;
 
   state.activeLightboxId = postId;
-  DOM.lightboxImg.src = `./img/${postId}.png`;
-  DOM.lightboxImg.onerror = null;
+  DOM.lightboxImg.src = post.image || `./img/${postId}.png`;
+  DOM.lightboxImg.onerror = () => {
+    DOM.lightboxImg.onerror = null;
+    DOM.lightboxImg.src = "./img/0001.png";
+  };
 
   DOM.lightboxPostTitle.textContent = post.title;
   DOM.lightboxAccount.textContent = post.account;
